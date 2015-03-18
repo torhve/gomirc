@@ -150,6 +150,7 @@ func handle_irc_message(e *irc.Event) {
 	_, present := joins[user_id]
 	// Issue a matrix join for the first time when get a message from new nick
 	if !present {
+		joins[user_id] = true
 		matrix_join(user_id)
 	}
 	post_matrix_message(user_id, message)
