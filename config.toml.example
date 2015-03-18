@@ -1,0 +1,12 @@
+[irc]
+user = "gomatrix"
+server = "irc.freenode.net"
+channel = "#privatechan"
+port = "6667"
+
+[matrix]
+homeserver = 'http://127.0.0.1:8008'
+token = "secret token of doom"
+
+[bridge]
+url = "http://127.0.0.1:9000"
