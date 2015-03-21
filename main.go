@@ -18,7 +18,7 @@ var as_token string
 var channel string
 var homeserver string
 var homeserver_domain string
-var room_id string
+var roomId string
 
 var bots map[string]*irc.Connection
 var joins map[string]bool
@@ -66,8 +66,9 @@ func register(as_token string, self_url string) {
 	}`
 	b := strings.NewReader(jsonStr)
 	req, err := http.Post(url, "application/json", b)
+	defer req.Body.Close()
 	if err != nil || req.StatusCode != 200 {
-		log.Fatal(err)
+		log.Println(err)
 		os.Exit(1)
 	} else {
 		println("Registered OK")
@@ -85,7 +86,7 @@ func UrlEncoded(str string) (string, error) {
 }
 
 func matrix_join(user_id string) {
-	room := url.QueryEscape(room_id)
+	room := url.QueryEscape(roomId)
 	esc_user_id := url.QueryEscape(user_id)
 	url := homeserver + "/_matrix/client/api/v1" + "/rooms/" + room + "/join?access_token=" + as_token + "&user_id=" + esc_user_id
 	jsonStr := "{}"
@@ -94,10 +95,11 @@ func matrix_join(user_id string) {
 	if err != nil || req.StatusCode != 200 {
 		log.Fatal(err)
 	}
+	defer req.Body.Close()
 }
 
 func post_matrix_message(user_id string, message string) {
-	room := url.QueryEscape(room_id)
+	room := url.QueryEscape(roomId)
 	esc_user_id := url.QueryEscape(user_id)
 	url := homeserver + "/_matrix/client/api/v1" + "/rooms/" + room + "/send/m.room.message?access_token=" + as_token + "&user_id=" + esc_user_id
 	jsonStr := `{
@@ -105,17 +107,19 @@ func post_matrix_message(user_id string, message string) {
 		"msgtype":"m.text"
 	}`
 	b := strings.NewReader(jsonStr)
-	_, err := http.Post(url, "application/json", b)
+	req, err := http.Post(url, "application/json", b)
+	defer req.Body.Close()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 }
 
 func check_homeserver_user(user_id string) bool {
 	url := homeserver + "/_matrix/appservice/v1/users/" + user_id + "?" + hs_token.Token
 	req, err := http.Get(url)
+	defer req.Body.Close()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return false
 	}
 	if req.StatusCode == 200 {
@@ -131,8 +135,8 @@ func ircbot(server string, channel string, port string, nick string, user string
 	irccon1.Debug = true
 	err := irccon1.Connect(server + ":" + port)
 	if err != nil {
-		log.Fatal(err.Error())
-		log.Fatal("Can't connect to " + server + ".")
+		log.Println(err.Error())
+		log.Println("Can't connect to " + server + ".")
 	}
 	go irccon1.Loop()
 	return irccon1
@@ -186,7 +190,7 @@ func main() {
 	// Register application service webhook on homeserver
 	register(as_token, bridge)
 
-	room_id = config.Get("matrix.room_id").(string)
+	roomId = config.Get("matrix.room_id").(string)
 
 	server := config.Get("irc.server").(string)
 	channel = config.Get("irc.channel").(string)
@@ -219,7 +223,7 @@ func main() {
 				return
 			}
 			// ONLY listen to our roomid
-			if e.RoomID != room_id {
+			if e.RoomID != roomId {
 				return
 			}
 			switch e.EventType {
